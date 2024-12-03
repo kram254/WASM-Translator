@@ -2,9 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Translator from '../frontend/components/Translator';
 import '@testing-library/jest-dom/extend-expect';
-import axios from 'axios'; // *Modified* - Import axios to mock API calls
+import axios from 'axios'; 
 
-// *Modified* - Mock axios
+
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
