@@ -7,19 +7,30 @@ const Translator: React.FC = () => {
     const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
     const [translations, setTranslations] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false); 
-    const [error, setError] = useState<string | null>(null); // *Modified* - Add error state
+    const [error, setError] = useState<string | null>(null);
 
     const handleTranslate = async () => {
-        if (inputText.trim() === '' || targetLanguages.length === 0) return;
-        setIsLoading(true); // *Modified*
-        setError(null);     // *Modified*
+        console.log('*Debug* - Translate button clicked'); // *Modified*
+        console.log('*Debug* - Input Text:', inputText);     // *Modified*
+        console.log('*Debug* - Target Languages:', targetLanguages); // *Modified*
+
+        if (inputText.trim() === '' || targetLanguages.length === 0) {
+            console.log('*Debug* - Translation aborted: Empty input or no target languages'); // *Modified*
+            return;
+        }
+        setIsLoading(true); 
+        setError(null);     
+
         try {
-            const result = await translateTexts([inputText], targetLanguages);
+            const result = await translateTexts([inputText], targetLanguages); // *Modified* - Use updated translateTexts
+            console.log('*Debug* - Translation result:', result); // *Modified*
             setTranslations(result[inputText]);
         } catch (err: any) {
+            console.error('*Debug* - Translation error:', err); // *Modified*
             setError('An error occurred during translation.');
         } finally {
-            setIsLoading(false); // *Modified*
+            setIsLoading(false); 
+            console.log('*Debug* - Translation process completed'); // *Modified*
         }
     };
 

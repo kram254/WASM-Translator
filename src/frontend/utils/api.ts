@@ -1,17 +1,44 @@
 export interface Product {
-    id: number;
-    title: string;
+    item: {
+        itemIdStr: string;
+        title: string;
+        image: string;
+        sku: {
+            def: {
+                price: string;
+                promotionPrice: string;
+            }
+        }
+    };
+    delivery: {
+        shippingFrom: string;
+    };
+    seller: {
+        storeTitle: string;
+        storeType: string;
+    };
 }
 
-export const fetchProducts = async (limit: number): Promise<Product[]> => {
-    // Placeholder for API call
-    // Simulate fetching products
-    const products: Product[] = [];
-    for (let i = 1; i <= limit; i++) {
-        products.push({
-            id: i,
-            title: `产品标题 ${i}` // "Product Title" in Chinese
+// *Modified* - Updated fetchProducts to use the actual API
+export const fetchProducts = async (searchText: string, pageNumber: string = "1", pageSize: string = "50"): Promise<Product[]> => {
+    try {
+        const response = await fetch("https://b9a3-20-56-141-57.ngrok-free.app/api/v1/search/text", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                text: searchText,
+                pageNumber,
+                pageSize
+            })
         });
+
+        const data = await response.json();
+        return data.result.resultList;
+    } catch (error) {
+        console.error("Error fetching products:", error);
+        return [];
     }
-    return new Promise(resolve => setTimeout(() => resolve(products), 1000));
 };

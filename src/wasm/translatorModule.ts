@@ -1,7 +1,11 @@
-// src/wasm/translatorModule.ts
-
 export interface TranslatorModule {
-    translate: (textPtr: number, langPtr: number, textLen: number, langLen: number) => number;
+    /**
+     * Translates the input text to the specified target language.
+     * @param text The text to translate.
+     * @param lang The target language code (e.g., 'en', 'ru').
+     * @returns The translated text.
+     */
+    translate: (text: string, lang: string) => string; // *Modified* - Updated translate function signature
     memory: WebAssembly.Memory;
 }
 
@@ -23,7 +27,7 @@ export async function loadTranslatorModule(): Promise<TranslatorModule> {
     const wasm = wasmModule.instance.exports;
 
     const module: TranslatorModule = {
-        translate: wasm.translate as any,
+        translate: wasm.translate as any, // *Modified* - Ensure correct typing
         memory: wasm.memory as WebAssembly.Memory,
     };
 

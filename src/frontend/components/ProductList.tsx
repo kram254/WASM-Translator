@@ -1,59 +1,81 @@
 import React, { useEffect, useState } from 'react';
-import { fetchProducts } from '../utils/api';
+import { fetchProducts, Product } from '../utils/api';
 import { translateTexts } from '../utils/translator';
 
-interface Product {
-    id: number;
-    title: string;
-}
-
-const targetLanguages = ['turkmen', 'english', 'russian', 'ukrainian'];
+// const targetLanguages = ['turkmen', 'english', 'russian', 'ukrainian'];
+const targetLanguages = ['tr', 'en', 'ru', 'uk'];
 
 const ProductList: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
-    const [translatedTitles, setTranslatedTitles] = useState<Record<number, Record<string, string>>>({});
+    const [translatedTitles, setTranslatedTitles] = useState<Record<string, Record<string, string>>>({});
     const [loading, setLoading] = useState(false);
+    const [searchText, setSearchText] = useState('shoe'); // *Modified* - Added search functionality
 
     useEffect(() => {
         const getProducts = async () => {
-            const fetchedProducts = await fetchProducts(50);
+            console.log('*Debug* - Fetching products with searchText:', searchText); // *Modified*
+            const fetchedProducts = await fetchProducts(searchText);
+            console.log('*Debug* - Fetched Products:', fetchedProducts); // *Modified*
             setProducts(fetchedProducts);
         };
         getProducts();
-    }, []);
+    }, [searchText]);
 
     useEffect(() => {
         const translateProductTitles = async () => {
+            if (products.length === 0) {
+                console.log('*Debug* - No products to translate'); // *Modified*
+                return;
+            }
+
             setLoading(true);
-            const titles = products.map(p => p.title);
-            const translations = await translateTexts(titles, targetLanguages);
-            const translated: Record<number, Record<string, string>> = {};
+            console.log('*Debug* - Translating product titles'); // *Modified*
+
+            const titles = products.map(p => p.item.title);
+            console.log('*Debug* - Product Titles:', titles); // *Modified*
+
+            const translations = await translateTexts(titles, targetLanguages); // *Modified* - Use updated translateTexts
+
+            console.log('*Debug* - Translations:', translations); // *Modified*
+
+            const translated: Record<string, Record<string, string>> = {};
             products.forEach((product, index) => {
-                translated[product.id] = translations[titles[index]];
+                translated[product.item.itemIdStr] = translations[titles[index]];
             });
             setTranslatedTitles(translated);
             setLoading(false);
+            console.log('*Debug* - Translated Titles:', translated); // *Modified*
         };
 
-        if (products.length > 0) {
-            translateProductTitles();
-        }
+        translateProductTitles();
     }, [products]);
 
     return (
         <div className="product-list">
             <h2>Products</h2>
+            {/* *Modified* - Added search input */}
+            <input 
+                type="text"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="Search products..."
+            />
             {loading && <p>Translating titles...</p>}
             <ul>
                 {products.map(product => (
-                    <li key={product.id}>
-                        <h3>{product.title}</h3>
-                        {translatedTitles[product.id] && (
-                            <ul>
-                                {Object.entries(translatedTitles[product.id]).map(([lang, translatedText]) => (
-                                    <li key={lang}><strong>{lang}:</strong> {translatedText}</li>
+                    <li key={product.item.itemIdStr}>
+                        {/* *Modified* - Updated product display structure */}
+                        <img src={product.item.image} alt={product.item.title} />
+                        <h3>{product.item.title}</h3>
+                        <p>Price: ¥{product.item.sku.def.promotionPrice}</p>
+                        <p>Store: {product.seller.storeTitle}</p>
+                        <p>Shipping from: {product.delivery.shippingFrom}</p>
+                        {translatedTitles[product.item.itemIdStr] && (
+                            <div className="translations">
+                                {Object.entries(translatedTitles[product.item.itemIdStr]).map(([lang, translatedText]) => (
+                                    <p key={lang}><strong>{lang}:</strong> {translatedText}</p>
                                 ))}
-                            </ul>
+                            </div>
                         )}
                     </li>
                 ))}
@@ -63,3 +85,124 @@ const ProductList: React.FC = () => {
 };
 
 export default ProductList;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useEffect, useState } from 'react';
+// import { fetchProducts, Product } from '../utils/api';
+// import { translateTexts } from '../utils/translator';
+
+// // const targetLanguages = ['turkmen', 'english', 'russian', 'ukrainian'];
+// const targetLanguages = ['tr', 'en', 'ru', 'uk'];
+
+// const ProductList: React.FC = () => {
+//     const [products, setProducts] = useState<Product[]>([]);
+//     const [translatedTitles, setTranslatedTitles] = useState<Record<string, Record<string, string>>>({});
+//     const [loading, setLoading] = useState(false);
+//     const [searchText, setSearchText] = useState('shoe'); // *Modified* - Added search functionality
+
+//     useEffect(() => {
+//         const getProducts = async () => {
+//             console.log('*Debug* - Fetching products with searchText:', searchText); // *Modified*
+//             const fetchedProducts = await fetchProducts(searchText);
+//             console.log('*Debug* - Fetched Products:', fetchedProducts); // *Modified*
+//             setProducts(fetchedProducts);
+//         };
+//         getProducts();
+//     }, [searchText]);
+
+//     useEffect(() => {
+//         const translateProductTitles = async () => {
+//             if (products.length === 0) {
+//                 console.log('*Debug* - No products to translate'); // *Modified*
+//                 return;
+//             }
+
+//             setLoading(true);
+//             console.log('*Debug* - Translating product titles'); // *Modified*
+
+//             const titles = products.map(p => p.item.title);
+//             console.log('*Debug* - Product Titles:', titles); // *Modified*
+
+//             const translations = await translateTexts(titles, targetLanguages);
+//             console.log('*Debug* - Translations:', translations); // *Modified*
+
+//             const translated: Record<string, Record<string, string>> = {};
+//             products.forEach((product, index) => {
+//                 translated[product.item.itemIdStr] = translations[titles[index]];
+//             });
+//             setTranslatedTitles(translated);
+//             setLoading(false);
+//             console.log('*Debug* - Translated Titles:', translated); // *Modified*
+//         };
+
+//         translateProductTitles();
+//     }, [products]);
+
+//     return (
+//         <div className="product-list">
+//             <h2>Products</h2>
+//             {/* *Modified* - Added search input */}
+//             <input 
+//                 type="text"
+//                 value={searchText}
+//                 onChange={(e) => setSearchText(e.target.value)}
+//                 placeholder="Search products..."
+//             />
+//             {loading && <p>Translating titles...</p>}
+//             <ul>
+//                 {products.map(product => (
+//                     <li key={product.item.itemIdStr}>
+//                         {/* *Modified* - Updated product display structure */}
+//                         <img src={product.item.image} alt={product.item.title} />
+//                         <h3>{product.item.title}</h3>
+//                         <p>Price: ¥{product.item.sku.def.promotionPrice}</p>
+//                         <p>Store: {product.seller.storeTitle}</p>
+//                         <p>Shipping from: {product.delivery.shippingFrom}</p>
+//                         {translatedTitles[product.item.itemIdStr] && (
+//                             <div className="translations">
+//                                 {Object.entries(translatedTitles[product.item.itemIdStr]).map(([lang, translatedText]) => (
+//                                     <p key={lang}><strong>{lang}:</strong> {translatedText}</p>
+//                                 ))}
+//                             </div>
+//                         )}
+//                     </li>
+//                 ))}
+//             </ul>
+//         </div>
+//     );
+// }
+
+// export default ProductList;
+
