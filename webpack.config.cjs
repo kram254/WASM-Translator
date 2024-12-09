@@ -9,13 +9,18 @@ module.exports = {
     },
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
+        fallback: {
+            fs: false,
+            path: false,
+            crypto: false
+        }
     },
     module: {
         rules: [
             {
                 test: /\.(ts|tsx)$/,
                 use: 'ts-loader',
-                exclude: [/node_modules/, /\.test\.(ts|tsx)$/], // *Modified* - Exclude test files
+                exclude: [/node_modules/, /\.test\.(ts|tsx)$/],
             },
             {
                 test: /\.css$/,
@@ -45,5 +50,5 @@ module.exports = {
     },
     experiments: {
         asyncWebAssembly: true, 
-    },
+    }
 };

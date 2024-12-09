@@ -1,39 +1,40 @@
 import { loadTranslatorModule, TranslatorModule } from '../../wasm/translatorModule';
 
 /**
- * Translates an array of texts into the specified target languages using the WASM translator module.
- * @param texts Array of strings to translate.
- * @param targetLanguages Array of target language codes (e.g., 'en', 'ru').
- * @returns A promise that resolves to an object mapping each text to its translations.
+ * *Slightly Modified* - Updated translateTexts to use Argos Translate via Pyodide for offline translations.
  */
 export async function translateTexts(
     texts: string[],
-    targetLanguages: string[]
+    targetLanguages: string[],
+    sourceLanguage: string = 'zh' // *Slightly Modified* - Using language codes compatible with Argos
 ): Promise<Record<string, Record<string, string>>> {
     const translations: Record<string, Record<string, string>> = {};
-
-    console.log('*Debug* - Initiating translation for texts:', texts); // *Modified*
-
-    const translator: TranslatorModule = await loadTranslatorModule(); // *Modified* - Load WASM module
-
-    for (const text of texts) {
-        translations[text] = {};
-        for (const lang of targetLanguages) {
-            try {
-                console.log(`*Debug* - Translating text: "${text}" to language: "${lang}"`); // *Modified*
-                
-                const translatedText = translator.translate(text, lang); // *Modified* - Use WASM translate function
-                
-                console.log(`*Debug* - Translated Text for "${lang}":`, translatedText); // *Modified*
-                translations[text][lang] = translatedText;
-            } catch (error) {
-                console.error(`*Debug* - Translation error for ${lang}:`, error); // *Modified*
-                translations[text][lang] = 'Translation failed';
+    
+    try {
+        const translator = await loadTranslatorModule();
+        
+        for (const text of texts) {
+            translations[text] = {};
+            for (const lang of targetLanguages) {
+                try {
+                    const translatedText = await translator.translate(text, lang); // *Slightly Modified* - Await the async translate
+                    translations[text][lang] = translatedText;
+                } catch (error: unknown) {
+                    const errorMessage = error instanceof Error 
+                        ? error.message 
+                        : 'An unknown error occurred';
+                    translations[text][lang] = `Translation failed: ${errorMessage}`;
+                }
             }
         }
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error 
+            ? error.message 
+            : 'An unknown error occurred';
+        console.error('Translation module error:', errorMessage);
+        throw new Error(errorMessage);
     }
 
-    console.log('*Debug* - All translations completed:', translations); // *Modified*
     return translations;
 }
 
@@ -67,51 +68,65 @@ export async function translateTexts(
 
 
 
-
-
-
-
-
 // import { loadTranslatorModule, encodeString, TranslatorModule } from '../../wasm/translatorModule';
-// import axios from 'axios';
-
-// /**
-//  * Translates an array of texts into the specified target languages using the WASM translator module.
-//  * @param texts Array of strings to translate.
-//  * @param targetLanguages Array of target language strings (e.g., 'english', 'russian').
-//  * @returns A promise that resolves to an object mapping each text to its translations.
-//  */
 
 // export async function translateTexts(
 //     texts: string[],
 //     targetLanguages: string[],
-//     sourceLanguage: string = 'chinese' 
+//     sourceLanguage: string = 'zh'
 // ): Promise<Record<string, Record<string, string>>> {
 //     const translations: Record<string, Record<string, string>> = {};
+    
+//     try {
+//         const translator = await loadTranslatorModule();
+        
+//         if (!translator.isModelLoaded()) {
+//             throw new Error('Translation model not loaded');
+//         }
 
-//     console.log('*Debug* - Initiating translation for texts:', texts); // *Modified*
-//     console.log('*Debug* - Target Languages:', targetLanguages); // *Modified*
+//         for (const text of texts) {
+//             translations[text] = {};
+//             for (const lang of targetLanguages) {
+//                 try {
+//                     const { ptr: textPtr, len: textLen } = encodeString(text, translator.memory);
+//                     const { ptr: langPtr, len: langLen } = encodeString(lang, translator.memory);
 
-//     for (const text of texts) {
-//         translations[text] = {};
-//         for (const lang of targetLanguages) {
-//             try {
-//                 console.log(`*Debug* - Translating text: "${text}" to language: "${lang}"`); // *Modified*
+//                     const resultPtr = translator.translate(textPtr, langPtr, textLen, langLen);
+                    
+//                     if (resultPtr === 0) {
+//                         throw new Error('Translation failed');
+//                     }
 
-//                 const response = await axios.post('http://localhost:5000/api/translate', { 
-//                     text,
-//                     targetLang: lang // *Modified* - Removed sourceLang
-//                 });
+//                     const memoryBuffer = new Uint8Array(translator.memory.buffer);
+//                     let end = resultPtr;
+//                     while (memoryBuffer[end] !== 0 && end < memoryBuffer.length) {
+//                         end++;
+//                     }
+                    
+//                     const bytes = memoryBuffer.slice(resultPtr, end);
+//                     const translatedText = new TextDecoder().decode(bytes);
 
-//                 console.log(`*Debug* - Received response for "${lang}":`, response.data); // *Modified*
-//                 translations[text][lang] = response.data.translatedText;
-//             } catch (error) {
-//                 console.error(`*Debug* - Translation error for ${lang}:`, error); // *Modified*
-//                 translations[text][lang] = 'Translation failed';
+//                     translator.freeMemory(textPtr);
+//                     translator.freeMemory(langPtr);
+//                     translator.freeMemory(resultPtr);
+
+//                     translations[text][lang] = translatedText;
+//                 } catch (error: unknown) {
+//                     const errorMessage = error instanceof Error 
+//                         ? error.message 
+//                         : 'An unknown error occurred';
+//                     translations[text][lang] = `Translation failed: ${errorMessage}`;
+//                 }
 //             }
 //         }
+//     } catch (error: unknown) {
+//         const errorMessage = error instanceof Error 
+//             ? error.message 
+//             : 'An unknown error occurred';
+//         console.error('Translation module error:', errorMessage);
+//         throw new Error(errorMessage);
 //     }
 
-//     console.log('*Debug* - All translations completed:', translations); // *Modified*
 //     return translations;
 // }
+

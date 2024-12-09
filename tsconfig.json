@@ -10,7 +10,7 @@
     "outDir": "./dist",
     "sourceMap": true,
     "moduleResolution": "node",
-    "types": ["jest", "@testing-library/jest-dom"]  
+    "types": ["jest", "@testing-library/jest-dom"]
   },
   "include": ["src", "src/backend/translationService.ts", "globals.d.ts"],
   "exclude": ["node_modules", "dist"]

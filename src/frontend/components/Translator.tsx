@@ -22,7 +22,7 @@ const Translator: React.FC = () => {
         setError(null);     
 
         try {
-            const result = await translateTexts([inputText], targetLanguages); // *Modified* - Use updated translateTexts
+            const result = await translateTexts([inputText], targetLanguages, 'zh'); // *Modified* - Use updated translateTexts with source language
             console.log('*Debug* - Translation result:', result); // *Modified*
             setTranslations(result[inputText]);
         } catch (err: any) {
