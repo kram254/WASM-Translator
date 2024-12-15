@@ -36,13 +36,13 @@ app.get('/', (req, res) => {
 
 // Updated translation endpoint to handle short language codes with type safety
 app.post('/api/translate', async (req, res) => {
-    console.log('*Debug* - Received /api/translate request'); // *Modified*
-    const { text, targetLang } = req.body;  // *Modified* - Removed sourceLang requirement
+    console.log('*Debug* - Received /api/translate request'); // *jinx jinx* - Modified debug log
+    const { text, targetLang } = req.body;  // *jinx jinx* - Removed sourceLang requirement
 
-    console.log('*Debug* - Request Body:', req.body); // *Modified*
+    console.log('*Debug* - Request Body:', req.body); // *jinx jinx* - Modified debug log
 
     if (!text || !targetLang) {
-        console.log('*Debug* - Missing required fields'); // *Modified*
+        console.log('*Debug* - Missing required fields'); // *jinx jinx* - Modified debug log
         return res.status(400).json({ 
             error: 'Missing required fields: text, targetLang' 
         });
@@ -51,16 +51,16 @@ app.post('/api/translate', async (req, res) => {
     try {
         // Always use Chinese as source language
         const sourceCode = 'zh_CN';
-        console.log('*Debug* - Source Language Code:', sourceCode); // *Modified*
+        console.log('*Debug* - Source Language Code:', sourceCode); // *jinx jinx* - Modified debug log
 
         // Ensure targetLang is one of the supported languages
         const normalizedTargetLang = typeof targetLang === 'string' ? targetLang.toLowerCase() : '';
-        const targetCode = LANGUAGE_CODES[normalizedTargetLang as SupportedLanguage]; // *Modified* - Added type assertion
+        const targetCode = LANGUAGE_CODES[normalizedTargetLang as SupportedLanguage]; // *jinx jinx* - Added type assertion
 
-        console.log('*Debug* - Target Language Code:', targetCode); // *Modified*
+        console.log('*Debug* - Target Language Code:', targetCode); // *jinx jinx* - Modified debug log
 
         if (!targetCode) {
-            console.log(`*Debug* - Unsupported target language: ${targetLang}`); // *Modified*
+            console.log(`*Debug* - Unsupported target language: ${targetLang}`); // *jinx jinx* - Modified debug log
             return res.status(400).json({ 
                 error: `Unsupported target language: ${targetLang}` 
             });
@@ -71,7 +71,7 @@ app.post('/api/translate', async (req, res) => {
 
         while (retryCount < maxRetries) {
             try {
-                console.log(`*Debug* - Attempt ${retryCount + 1} to translate`); // *Modified*
+                console.log(`*Debug* - Attempt ${retryCount + 1} to translate`); // *jinx jinx* - Modified debug log
 
                 const response = await axios.post(
                     'https://api-inference.huggingface.co/models/facebook/mbart-large-50-many-to-many-mmt',
@@ -93,35 +93,35 @@ app.post('/api/translate', async (req, res) => {
                     }
                 );
 
-                console.log(`*Debug* - HuggingFace API response:`, response.data); // *Modified*
+                console.log(`*Debug* - HuggingFace API response:`, response.data); // *jinx jinx* - Modified debug log
 
                 if (response.data.error) {
                     if (response.data.error.includes('currently loading')) {
-                        console.log('*Debug* - Model is loading, retrying...'); // *Modified*
+                        console.log('*Debug* - Model is loading, retrying...'); // *jinx jinx* - Modified debug log
                         retryCount++;
                         await new Promise(resolve => setTimeout(resolve, 2000));
                         continue;
                     }
-                    console.log('*Debug* - HuggingFace API returned an error:', response.data.error); // *Modified*
+                    console.log('*Debug* - HuggingFace API returned an error:', response.data.error); // *jinx jinx* - Modified debug log
                     return res.status(500).json({ error: response.data.error });
                 }
 
                 const translatedText = response.data[0]?.translation_text || 'Translation not available';
-                console.log('*Debug* - Translated Text:', translatedText); // *Modified*
+                console.log('*Debug* - Translated Text:', translatedText); // *jinx jinx* - Modified debug log
                 return res.json({ translatedText });
 
             } catch (error: any) {
-                console.error('*Debug* - Translation error:', error.response?.data || error.message); // *Modified*
+                console.error('*Debug* - Translation error:', error.response?.data || error.message); // *jinx jinx* - Modified debug log
 
                 if (error.response?.data?.error?.includes('currently loading')) {
-                    console.log('*Debug* - Model is loading, retrying...'); // *Modified*
+                    console.log('*Debug* - Model is loading, retrying...'); // *jinx jinx* - Modified debug log
                     retryCount++;
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     continue;
                 }
 
                 if (error.response?.status === 401) {
-                    console.log('*Debug* - Invalid API token'); // *Modified*
+                    console.log('*Debug* - Invalid API token'); // *jinx jinx* - Modified debug log
                     return res.status(401).json({ 
                         error: 'Invalid API token. Please check your HUGGINGFACE_API_KEY.' 
                     });
@@ -131,12 +131,12 @@ app.post('/api/translate', async (req, res) => {
             }
         }
 
-        console.log('*Debug* - Max retries reached, service unavailable'); // *Modified*
+        console.log('*Debug* - Max retries reached, service unavailable'); // *jinx jinx* - Modified debug log
         return res.status(503).json({ 
             error: 'Service temporarily unavailable. Please try again later.' 
         });
     } catch (error: any) {
-        console.error('*Debug* - Translation setup error:', error.message); // *Modified*
+        console.error('*Debug* - Translation setup error:', error.message); // *jinx jinx* - Modified debug log
         return res.status(500).json({ error: 'Translation setup failed' });
     }
 });
@@ -144,16 +144,6 @@ app.post('/api/translate', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Translation service is running on port ${PORT}`);
 });
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -207,7 +197,7 @@ app.listen(PORT, () => {
 //     process.exit(1);
 // }
 
-// // *Modified* - Added language code mappings for the mBART model
+// // Added language code mappings for the mBART model
 // const LANGUAGE_CODES: { [key: string]: string } = {
 //     'tr': 'tr_TR',  // Turkish (closest to Turkmen)
 //     'en': 'en_XX',
@@ -216,32 +206,40 @@ app.listen(PORT, () => {
 //     'zh': 'zh_CN'
 // };
 
-// // *Modified* - Defined supported language types
+// // Defined supported language types
 // type SupportedLanguage = 'tr' | 'en' | 'ru' | 'uk' | 'zh';
 
 // app.get('/', (req, res) => {
 //     res.send('Translation Service is running.');
 // });
 
-// // *Modified* - Updated translation endpoint to handle short language codes with type safety
+// // Updated translation endpoint to handle short language codes with type safety
 // app.post('/api/translate', async (req, res) => {
+//     console.log('*Debug* - Received /api/translate request'); // *Modified*
 //     const { text, targetLang } = req.body;  // *Modified* - Removed sourceLang requirement
 
+//     console.log('*Debug* - Request Body:', req.body); // *Modified*
+
 //     if (!text || !targetLang) {
+//         console.log('*Debug* - Missing required fields'); // *Modified*
 //         return res.status(400).json({ 
 //             error: 'Missing required fields: text, targetLang' 
 //         });
 //     }
 
 //     try {
-//         // *Modified* - Always use Chinese as source language
+//         // Always use Chinese as source language
 //         const sourceCode = 'zh_CN';
-        
-//         // *Modified* - Ensure targetLang is one of the supported languages
+//         console.log('*Debug* - Source Language Code:', sourceCode); // *Modified*
+
+//         // Ensure targetLang is one of the supported languages
 //         const normalizedTargetLang = typeof targetLang === 'string' ? targetLang.toLowerCase() : '';
 //         const targetCode = LANGUAGE_CODES[normalizedTargetLang as SupportedLanguage]; // *Modified* - Added type assertion
-        
+
+//         console.log('*Debug* - Target Language Code:', targetCode); // *Modified*
+
 //         if (!targetCode) {
+//             console.log(`*Debug* - Unsupported target language: ${targetLang}`); // *Modified*
 //             return res.status(400).json({ 
 //                 error: `Unsupported target language: ${targetLang}` 
 //             });
@@ -252,6 +250,8 @@ app.listen(PORT, () => {
 
 //         while (retryCount < maxRetries) {
 //             try {
+//                 console.log(`*Debug* - Attempt ${retryCount + 1} to translate`); // *Modified*
+
 //                 const response = await axios.post(
 //                     'https://api-inference.huggingface.co/models/facebook/mbart-large-50-many-to-many-mmt',
 //                     {
@@ -272,28 +272,35 @@ app.listen(PORT, () => {
 //                     }
 //                 );
 
+//                 console.log(`*Debug* - HuggingFace API response:`, response.data); // *Modified*
+
 //                 if (response.data.error) {
 //                     if (response.data.error.includes('currently loading')) {
+//                         console.log('*Debug* - Model is loading, retrying...'); // *Modified*
 //                         retryCount++;
 //                         await new Promise(resolve => setTimeout(resolve, 2000));
 //                         continue;
 //                     }
+//                     console.log('*Debug* - HuggingFace API returned an error:', response.data.error); // *Modified*
 //                     return res.status(500).json({ error: response.data.error });
 //                 }
 
 //                 const translatedText = response.data[0]?.translation_text || 'Translation not available';
+//                 console.log('*Debug* - Translated Text:', translatedText); // *Modified*
 //                 return res.json({ translatedText });
 
 //             } catch (error: any) {
-//                 console.error('Translation error:', error.response?.data || error.message);
+//                 console.error('*Debug* - Translation error:', error.response?.data || error.message); // *Modified*
 
 //                 if (error.response?.data?.error?.includes('currently loading')) {
+//                     console.log('*Debug* - Model is loading, retrying...'); // *Modified*
 //                     retryCount++;
 //                     await new Promise(resolve => setTimeout(resolve, 2000));
 //                     continue;
 //                 }
 
 //                 if (error.response?.status === 401) {
+//                     console.log('*Debug* - Invalid API token'); // *Modified*
 //                     return res.status(401).json({ 
 //                         error: 'Invalid API token. Please check your HUGGINGFACE_API_KEY.' 
 //                     });
@@ -303,11 +310,12 @@ app.listen(PORT, () => {
 //             }
 //         }
 
+//         console.log('*Debug* - Max retries reached, service unavailable'); // *Modified*
 //         return res.status(503).json({ 
 //             error: 'Service temporarily unavailable. Please try again later.' 
 //         });
 //     } catch (error: any) {
-//         console.error('Translation setup error:', error.message);
+//         console.error('*Debug* - Translation setup error:', error.message); // *Modified*
 //         return res.status(500).json({ error: 'Translation setup failed' });
 //     }
 // });
@@ -315,28 +323,3 @@ app.listen(PORT, () => {
 // app.listen(PORT, () => {
 //     console.log(`Translation service is running on port ${PORT}`);
 // });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 import { loadTranslatorModule, TranslatorModule } from '../wasm/translatorModule';
 
 describe('WASM Translator Module', () => {
-    let translator!: TranslatorModule; // *Slightly Modified* - Removed null and used definite assignment assertion
+    let translator!: TranslatorModule; // *jinx jinx* - Removed null and used definite assignment assertion
 
     beforeAll(async () => {
         translator = await loadTranslatorModule();
@@ -23,7 +23,7 @@ describe('WASM Translator Module', () => {
         expect(typeof translator.translate).toBe('function');
     });
 
-    it('should translate text correctly', async () => { // *Slightly Modified* - Made test async
+    it('should translate text correctly', async () => { // *jinx jinx* - Made test async
         const inputText = '测试';
         const targetLang = 'en';
 
@@ -31,13 +31,13 @@ describe('WASM Translator Module', () => {
         const mockTranslate = jest.fn().mockResolvedValue('Test');
         translator.translate = mockTranslate;
 
-        const translatedText = await translator.translate(inputText, targetLang); // *Slightly Modified* - Provide correct arguments
+        const translatedText = await translator.translate(inputText, targetLang); // *jinx jinx* - Provide correct arguments
         
         expect(translatedText).toBe('Test');
         expect(mockTranslate).toHaveBeenCalledWith(inputText, targetLang);
     });
 
-    it('should handle translation errors gracefully', async () => { // *Slightly Modified* - Made test async
+    it('should handle translation errors gracefully', async () => { // *jinx jinx* - Made test async
         const invalidText = '';
         const invalidLang = 'invalid_lang';
 
@@ -80,10 +80,10 @@ describe('WASM Translator Module', () => {
 
 
 
-// import { loadTranslatorModule, encodeString, TranslatorModule } from '../wasm/translatorModule';
+// import { loadTranslatorModule, TranslatorModule } from '../wasm/translatorModule';
 
 // describe('WASM Translator Module', () => {
-//     let translator: TranslatorModule | null = null;
+//     let translator!: TranslatorModule; // *Slightly Modified* - Removed null and used definite assignment assertion
 
 //     beforeAll(async () => {
 //         translator = await loadTranslatorModule();
@@ -96,64 +96,42 @@ describe('WASM Translator Module', () => {
 //     });
 
 //     afterEach(() => {
-//         // Clean up any allocated memory
+//         // Clean up any allocated memory if necessary
 //         jest.clearAllMocks();
 //     });
 
 //     it('should load the translator module successfully', () => {
 //         expect(translator).toBeDefined();
-//         expect(typeof translator!.translate).toBe('function');
-//         expect(typeof translator!.loadModel).toBe('function');
-//         expect(typeof translator!.loadVocab).toBe('function');
-//         expect(typeof translator!.isModelLoaded).toBe('function');
-//         expect(typeof translator!.freeMemory).toBe('function');
-//         expect(translator!.memory).toBeInstanceOf(WebAssembly.Memory);
+//         expect(typeof translator.translate).toBe('function');
 //     });
 
-//     it('should check if model is loaded', () => {
-//         expect(translator!.isModelLoaded()).toBe(true);
-//     });
-
-//     it('should translate text correctly', () => {
+//     it('should translate text correctly', async () => { // *Slightly Modified* - Made test async
 //         const inputText = '测试';
-//         const targetLang = 'en_XX';
+//         const targetLang = 'en';
 
-//         const { ptr: textPtr, len: textLen } = encodeString(inputText, translator!.memory);
-//         const { ptr: langPtr, len: langLen } = encodeString(targetLang, translator!.memory);
+//         // Mock the translate function
+//         const mockTranslate = jest.fn().mockResolvedValue('Test');
+//         translator.translate = mockTranslate;
 
-//         const resultPtr = translator!.translate(textPtr, langPtr, textLen, langLen);
+//         const translatedText = await translator.translate(inputText, targetLang); // *Slightly Modified* - Provide correct arguments
         
-//         expect(resultPtr).not.toBe(0);
-
-//         const memoryBuffer = new Uint8Array(translator!.memory.buffer);
-//         let end = resultPtr;
-//         while (memoryBuffer[end] !== 0) {
-//             end++;
-//         }
-        
-//         const bytes = memoryBuffer.slice(resultPtr, end);
-//         const translatedText = new TextDecoder().decode(bytes);
-
-//         expect(translatedText).toBeTruthy();
-//         expect(typeof translatedText).toBe('string');
-
-//         translator!.freeMemory(textPtr);
-//         translator!.freeMemory(langPtr);
-//         translator!.freeMemory(resultPtr);
+//         expect(translatedText).toBe('Test');
+//         expect(mockTranslate).toHaveBeenCalledWith(inputText, targetLang);
 //     });
 
-//     it('should handle translation errors gracefully', () => {
+//     it('should handle translation errors gracefully', async () => { // *Slightly Modified* - Made test async
 //         const invalidText = '';
 //         const invalidLang = 'invalid_lang';
 
-//         const { ptr: textPtr, len: textLen } = encodeString(invalidText, translator!.memory);
-//         const { ptr: langPtr, len: langLen } = encodeString(invalidLang, translator!.memory);
+//         // Mock the translate function to throw an error
+//         const mockTranslate = jest.fn().mockRejectedValue(new Error('Translation failed.'));
+//         translator.translate = mockTranslate;
 
-//         const resultPtr = translator!.translate(textPtr, langPtr, textLen, langLen);
-        
-//         expect(resultPtr).toBe(0);
-
-//         translator!.freeMemory(textPtr);
-//         translator!.freeMemory(langPtr);
+//         await expect(translator.translate(invalidText, invalidLang)).rejects.toThrow('Translation failed.');
+//         expect(mockTranslate).toHaveBeenCalledWith(invalidText, invalidLang);
 //     });
 // });
+
+
+
+

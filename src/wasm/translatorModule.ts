@@ -1,18 +1,18 @@
 export interface TranslatorModule {
     /**
-     * *Slightly Modified* - Translates the input text to the specified target language using Argos Translate via Pyodide.
+     * *jinx jinx* - Translates the input text to the specified target language using Argos Translate via Pyodide.
      * @param text The text to translate.
      * @param targetLang The target language code (e.g., 'en' for English).
      * @returns The translated text.
      */
-    translate: (text: string, targetLang: string) => Promise<string>; // *Slightly Modified* - Changed method signature
+    translate: (text: string, targetLang: string) => Promise<string>; // *jinx jinx* - Changed method signature
 }
 
 let pyodide: any = null;
 let loaded: boolean = false;
 
 /**
- * *Slightly Modified* - Loads Pyodide and installs Argos Translate for offline translations.
+ * *jinx jinx* - Loads Pyodide and installs Argos Translate for offline translations.
  */
 export async function loadTranslatorModule(): Promise<TranslatorModule> {
     if (loaded && pyodide) {
@@ -45,8 +45,11 @@ def install_language_package(from_code, to_code):
             package.install()
             return
 
-# Example: Install Chinese to English package
+# Install required language packages
 install_language_package('zh', 'en')
+install_language_package('zh', 'ru')
+install_language_package('zh', 'uk')
+install_language_package('zh', 'tr')  # *jinx jinx* - Added Turkmen translation package
 `);
 
     loaded = true;
@@ -57,7 +60,7 @@ install_language_package('zh', 'en')
 }
 
 /**
- * *Slightly Modified* - Translates text using Argos Translate via Pyodide.
+ * *jinx jinx* - Translates text using Argos Translate via Pyodide.
  * @param text The text to translate.
  * @param targetLang The target language code (e.g., 'en' for English).
  * @returns The translated text.
@@ -85,6 +88,7 @@ result
         throw new Error('Translation failed.');
     }
 }
+
 
 
 

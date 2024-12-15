@@ -9,13 +9,13 @@ const ProductList: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [translatedTitles, setTranslatedTitles] = useState<Record<string, Record<string, string>>>({});
     const [loading, setLoading] = useState(false);
-    const [searchText, setSearchText] = useState('shoe'); // *Modified* - Added search functionality
+    const [searchText, setSearchText] = useState('shoe'); // *jinx jinx* - Added search functionality
 
     useEffect(() => {
         const getProducts = async () => {
-            console.log('*Debug* - Fetching products with searchText:', searchText); // *Modified*
+            console.log('*Debug* - Fetching products with searchText:', searchText); // *jinx jinx* - Modified debug log
             const fetchedProducts = await fetchProducts(searchText);
-            console.log('*Debug* - Fetched Products:', fetchedProducts); // *Modified*
+            console.log('*Debug* - Fetched Products:', fetchedProducts); // *jinx jinx* - Modified debug log
             setProducts(fetchedProducts);
         };
         getProducts();
@@ -24,19 +24,19 @@ const ProductList: React.FC = () => {
     useEffect(() => {
         const translateProductTitles = async () => {
             if (products.length === 0) {
-                console.log('*Debug* - No products to translate'); // *Modified*
+                console.log('*Debug* - No products to translate'); // *jinx jinx* - Modified debug log
                 return;
             }
 
             setLoading(true);
-            console.log('*Debug* - Translating product titles'); // *Modified*
+            console.log('*Debug* - Translating product titles'); // *jinx jinx* - Modified debug log
 
             const titles = products.map(p => p.item.title);
-            console.log('*Debug* - Product Titles:', titles); // *Modified*
+            console.log('*Debug* - Product Titles:', titles); // *jinx jinx* - Modified debug log
 
-            const translations = await translateTexts(titles, targetLanguages); // *Modified* - Use updated translateTexts
+            const translations = await translateTexts(titles, targetLanguages); // *jinx jinx* - Use updated translateTexts
 
-            console.log('*Debug* - Translations:', translations); // *Modified*
+            console.log('*Debug* - Translations:', translations); // *jinx jinx* - Modified debug log
 
             const translated: Record<string, Record<string, string>> = {};
             products.forEach((product, index) => {
@@ -44,7 +44,7 @@ const ProductList: React.FC = () => {
             });
             setTranslatedTitles(translated);
             setLoading(false);
-            console.log('*Debug* - Translated Titles:', translated); // *Modified*
+            console.log('*Debug* - Translated Titles:', translated); // *jinx jinx* - Modified debug log
         };
 
         translateProductTitles();
@@ -53,7 +53,7 @@ const ProductList: React.FC = () => {
     return (
         <div className="product-list">
             <h2>Products</h2>
-            {/* *Modified* - Added search input */}
+            {/* *jinx jinx* - Added search input */}
             <input 
                 type="text"
                 value={searchText}
@@ -64,7 +64,7 @@ const ProductList: React.FC = () => {
             <ul>
                 {products.map(product => (
                     <li key={product.item.itemIdStr}>
-                        {/* *Modified* - Updated product display structure */}
+                        {/* *jinx jinx* - Updated product display structure */}
                         <img src={product.item.image} alt={product.item.title} />
                         <h3>{product.item.title}</h3>
                         <p>Price: ¥{product.item.sku.def.promotionPrice}</p>
@@ -85,11 +85,6 @@ const ProductList: React.FC = () => {
 };
 
 export default ProductList;
-
-
-
-
-
 
 
 
@@ -155,7 +150,8 @@ export default ProductList;
 //             const titles = products.map(p => p.item.title);
 //             console.log('*Debug* - Product Titles:', titles); // *Modified*
 
-//             const translations = await translateTexts(titles, targetLanguages);
+//             const translations = await translateTexts(titles, targetLanguages); // *Modified* - Use updated translateTexts
+
 //             console.log('*Debug* - Translations:', translations); // *Modified*
 
 //             const translated: Record<string, Record<string, string>> = {};
@@ -202,7 +198,22 @@ export default ProductList;
 //             </ul>
 //         </div>
 //     );
-// }
+// };
 
 // export default ProductList;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

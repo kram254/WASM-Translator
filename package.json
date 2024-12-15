@@ -5,10 +5,9 @@
   "main": "src/index.tsx",
   "scripts": {
     "start": "webpack serve --mode development --open",
-    "build": "webpack --mode production",
+    "build": "webpack --mode production && npm run asbuild",
     "test": "jest",
     "asbuild": "asc assembly/index.ts -b src/wasm/translator.wasm -O3 --exportRuntime --importMemory --runtime incremental"
-
   },
   "author": "Your Name",
   "license": "MIT",
@@ -29,13 +28,14 @@
     "@testing-library/react": "^16.0.1",
     "@types/cors": "^2.8.17",
     "@types/jest": "^29.2.3",
-    "@types/node": "^18.11.9",
+    "@types/node": "^18.19.68",
     "@types/react": "^18.0.25",
     "@types/react-dom": "^18.0.9",
     "assemblyscript": "^0.27.31",
     "css-loader": "^6.7.1",
     "html-webpack-plugin": "^5.5.0",
     "jest": "^29.3.1",
+    "jest-environment-jsdom": "^29.7.0",
     "style-loader": "^3.3.1",
     "ts-jest": "^29.0.3",
     "ts-loader": "^9.4.2",
@@ -50,5 +50,10 @@
       "import": "./build/release.js",
       "types": "./build/release.d.ts"
     }
-  }
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "keywords": []
 }

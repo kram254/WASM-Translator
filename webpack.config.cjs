@@ -6,6 +6,7 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js',
+        webassemblyModuleFilename: "translator.wasm" // *jinx jinx* - Ensured WASM module is output correctly
     },
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],

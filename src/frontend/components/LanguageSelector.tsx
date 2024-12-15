@@ -1,5 +1,5 @@
 import React from 'react';
-import Select, { MultiValue, ActionMeta } from 'react-select'; // *Modified* - Imported MultiValue and ActionMeta from react-select
+import Select, { MultiValue, ActionMeta } from 'react-select'; // *jinx jinx* - Imported MultiValue and ActionMeta from react-select
 
 interface LanguageSelectorProps {
     selectedLanguages: string[];
@@ -12,7 +12,7 @@ interface LanguageOption {
 }
 
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({ selectedLanguages, setSelectedLanguages }) => {
-    /* *Modified* - Updated availableLanguages to match react-select format */
+    /* *jinx jinx* - Updated availableLanguages to match react-select format */
     const availableLanguages: LanguageOption[] = [
         { value: 'tr', label: 'Turkish' },
         { value: 'en', label: 'English' },
@@ -20,26 +20,26 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ selectedLanguages, 
         { value: 'uk', label: 'Ukrainian' }
     ];
 
-    /* *Modified* - Updated handleChange to match react-select's expected types */
+    /* *jinx jinx* - Updated handleChange to match react-select's expected types */
     const handleChange = (
         selectedOptions: MultiValue<LanguageOption>,
         actionMeta: ActionMeta<LanguageOption>
     ) => {
         const languages = selectedOptions.map(option => option.value);
-        console.log('*Debug* - Selected Languages:', languages); // *Modified*
+        console.log('*Debug* - Selected Languages:', languages); // *jinx jinx* - Modified debug log
         setSelectedLanguages(languages);
     };
 
     return (
         <div className="language-selector">
             <label htmlFor="languages">Select Target Languages:</label>
-            {/* *Modified* - Replaced native select with react-select dropdown */}
+            {/* *jinx jinx* - Replaced native select with react-select dropdown */}
             <Select
                 id="languages"
                 isMulti
                 options={availableLanguages}
                 value={availableLanguages.filter(option => selectedLanguages.includes(option.value))}
-                onChange={handleChange} // *Modified* - Updated onChange handler
+                onChange={handleChange} // *jinx jinx* - Updated onChange handler
                 className="language-dropdown"
                 placeholder="Select languages..."
             />
@@ -48,6 +48,18 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ selectedLanguages, 
 };
 
 export default LanguageSelector;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -86,7 +98,9 @@ export default LanguageSelector;
 //         selectedOptions: MultiValue<LanguageOption>,
 //         actionMeta: ActionMeta<LanguageOption>
 //     ) => {
-//         setSelectedLanguages(selectedOptions.map(option => option.value));
+//         const languages = selectedOptions.map(option => option.value);
+//         console.log('*Debug* - Selected Languages:', languages); // *Modified*
+//         setSelectedLanguages(languages);
 //     };
 
 //     return (
@@ -107,3 +121,6 @@ export default LanguageSelector;
 // };
 
 // export default LanguageSelector;
+
+
+

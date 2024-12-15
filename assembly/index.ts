@@ -1,13 +1,16 @@
-import { allocate, free } from "./memory";
+import { allocate, free, initializeMemory } from "./memory";
+// *jinx jinx* - Removed import of TranslatorModule as it's a TypeScript module and cannot be imported directly into AssemblyScript
 
-// *Modified* - Updated constants with proper typing
+initializeMemory();
+
+// *jinx jinx* - Updated constants with proper typing
 const MAX_LENGTH: i32 = 400;
 const PAD_TOKEN_ID: i32 = 1;
 const BOS_TOKEN_ID: i32 = 0;
 const EOS_TOKEN_ID: i32 = 2;
 const VOCAB_SIZE: i32 = 250054;
 
-// *Modified* - Added proper state management
+// *jinx jinx* - Added proper state management
 let vocabularyData: Map<i32, string> | null = null;
 let modelLoaded: bool = false;
 let onnxSession: i32 = 0;
@@ -17,24 +20,22 @@ LANGUAGE_CODES.set("tr_TR", 250001);
 LANGUAGE_CODES.set("en_XX", 250004);
 LANGUAGE_CODES.set("ru_RU", 250020);
 LANGUAGE_CODES.set("uk_UA", 250034);
-    // Start of Selection
-    LANGUAGE_CODES.set("zh_CN", 250052);
-    
-    declare function initializeOnnxRuntime(): i32;
-    
-    declare function loadOnnxModel(modelPtr: i32, modelLen: i32): i32;
+// Start of Selection
+LANGUAGE_CODES.set("zh_CN", 250052);
 
-    external("env", "runInference")
-    export declare function runInference(
-        sessionHandle: i32,
-        inputIds: i32,
-        attentionMask: i32,
-        length: i32,
-        targetLangId: i32
-    ): i32;
-    
+declare function initializeOnnxRuntime(): i32;
+declare function loadOnnxModel(modelPtr: i32, modelLen: i32): i32;
 
-// *Modified* - Added proper model loading with error handling
+@external("env", "runInference") // *vibed* - Corrected decorator placement
+export declare function runInference(
+    sessionHandle: i32,
+    inputIds: i32,
+    attentionMask: i32,
+    length: i32,
+    targetLangId: i32
+): i32;
+
+// *jinx jinx* - Added proper model loading with error handling
 export function loadModel(modelPtr: i32, modelLen: i32): bool {
     if (modelLoaded) return true;
     
@@ -49,107 +50,194 @@ export function loadModel(modelPtr: i32, modelLen: i32): bool {
 }
 
 export function loadVocab(vocabPtr: i32, vocabLen: i32): bool {
-    const vocabBuffer = new Uint8Array(vocabLen);
-    for (let i = 0; i < vocabLen; i++) {
-        vocabBuffer[i] = load<u8>(vocabPtr + i);
-    }
-    
-    try {
-        vocabularyData = new Map<i32, string>();
-        let currentPos: i32 = 0;
-        
-        while (currentPos < vocabLen) {
-            // Read token ID (4 bytes)
-            const tokenId = load<i32>(vocabPtr + currentPos);
-            currentPos += 4;
-            
-            // Read string length (4 bytes)
-            const strLen = load<i32>(vocabPtr + currentPos);
-            currentPos += 4;
-            
-            // Read string data
-            const strBytes = new Uint8Array(strLen);
-            for (let i = 0; i < strLen; i++) {
-                strBytes[i] = load<u8>(vocabPtr + currentPos + i);
-            }
-            currentPos += strLen;
-            
-            // Convert bytes to string and store in vocabulary
-            if (tokenId >= 0 && tokenId < VOCAB_SIZE) {
-                const token = String.UTF8.decode(strBytes.buffer);
-                vocabularyData.set(tokenId, token);
-            }
-        }
-        
-        return true;
-    } catch {
+    if (vocabLen <= 0) {
         vocabularyData = null;
         return false;
     }
+
+    const vocabBuffer = new StaticArray<u8>(vocabLen);
+    for (let i = 0; i < vocabLen; i++) {
+        vocabBuffer[i] = load<u8>(vocabPtr + i);
+    }
+
+    vocabularyData = new Map<i32, string>();
+    let currentPos: i32 = 0;
+
+    while (currentPos < vocabLen) {
+        // Read token ID (4 bytes)
+        const tokenId = load<i32>(vocabPtr + currentPos);
+        currentPos += 4;
+        
+        // Read string length (4 bytes)
+        const strLen = load<i32>(vocabPtr + currentPos);
+        currentPos += 4;
+        
+        // Read string data
+        const strBytes = new StaticArray<u8>(strLen);
+        for (let i = 0; i < strLen; i++) {
+            strBytes[i] = load<u8>(vocabPtr + currentPos + i);
+        }
+        currentPos += strLen;
+        
+        // Convert bytes to string and store in vocabulary
+        if (tokenId >= 0 && tokenId < VOCAB_SIZE) {
+            const token = String.UTF8.decodeUnsafe(changetype<usize>(strBytes), strLen);
+            vocabularyData!.set(tokenId, token); // *vibed* - Assert that vocabularyData is not null
+        }
+    }
+    
+    return vocabularyData != null;
 }
 
-// *Modified* - Added proper translation implementation
+// *jinx jinx* - Added proper translation implementation
 export function translate(
     textPtr: i32,
     textLen: i32,
     langPtr: i32,
     langLen: i32
 ): i32 {
-    if (!modelLoaded || !vocabularyData || onnxSession <= 0) return 0;
+    const text = String.UTF8.decodeUnsafe(textPtr, textLen); // *jinx jinx*
+    const lang = String.UTF8.decodeUnsafe(langPtr, langLen); // *jinx jinx*
 
-    const textBytes = new Uint8Array(textLen);
-    const langBytes = new Uint8Array(langLen);
-    
-    memory.copy(changetype<i32>(textBytes), textPtr, textLen);
-    memory.copy(changetype<i32>(langBytes), langPtr, langLen);
-
-    const inputText = String.UTF8.decode(textBytes.buffer);
-    const targetLang = String.UTF8.decode(langBytes.buffer);
-
-    const targetLangId = LANGUAGE_CODES.get(targetLang);
-    if (targetLangId === null) return 0;
-
-    const tokens = new Int32Array(MAX_LENGTH);
-    const attentionMask = new Int32Array(MAX_LENGTH);
-    
-    // Initialize with padding
-    tokens.fill(PAD_TOKEN_ID);
-    attentionMask.fill(1);
-    
-    // Add BOS token
-    tokens[0] = BOS_TOKEN_ID;
-    
-    // Tokenize input text (simplified character-based tokenization)
-    let position: i32 = 1;
-    for (let i = 0; i < inputText.length && position < MAX_LENGTH - 1; i++) {
-        const charCode = inputText.charCodeAt(i);
-        tokens[position++] = charCode;
+    // Tokenize input text
+    const tokens = tokenize(text);
+    const attentionMask = new Int32Array(tokens.length);
+    for (let i = 0; i < tokens.length; i++) {
+        attentionMask[i] = 1; // *jinx jinx* - Simple attention mask
     }
-    
-    // Add EOS token
-    tokens[position] = EOS_TOKEN_ID;
 
-    const resultPtr = runInference(
+    // Allocate memory for tokens and attention mask
+    const tokensPtr = allocate(tokens.length * 4) as i32;
+    const attentionMaskPtr = allocate(attentionMask.length * 4) as i32;
+
+    // *jinx jinx* - Copy tokens and attention mask into WASM memory
+    for (let i = 0; i < tokens.length; i++) {
+        store<i32>(tokensPtr + i * 4, tokens[i]);
+        store<i32>(attentionMaskPtr + i * 4, attentionMask[i]);
+    }
+
+    // Get target language ID
+    const targetLangId = LANGUAGE_CODES.get(lang);
+    if (targetLangId == 0) { // *vibed* - Changed null check to check for 0
+        // Invalid language code
+        free(tokensPtr);
+        free(attentionMaskPtr);
+        return 0;
+    }
+
+    // Run inference
+    const outputPtr = runInference(
         onnxSession,
-        changetype<i32>(tokens),
-        changetype<i32>(attentionMask),
-        position + 1,
+        tokensPtr,
+        attentionMaskPtr,
+        tokens.length,
         targetLangId
     );
 
-    return resultPtr;
+    // Free allocated memory for tokens and attention mask
+    free(tokensPtr);
+    free(attentionMaskPtr);
+
+    if (outputPtr <= 0) {
+        return 0;
+    }
+
+    // Decode output tokens
+    const output = decodeTokens(outputPtr);
+
+    // *vibed* - Allocate buffer for encoded bytes
+    const outputLen = output.length;
+    const encodedBytesPtr = allocate(outputLen * 4) as i32; // Assuming max 4 bytes per character
+
+    // *vibed* - Correctly call encodeUnsafe with required arguments
+    const bytesWritten = String.UTF8.encodeUnsafe(
+        changetype<usize>(output), // Pointer to the string
+        outputLen,                 // Length of the string
+        encodedBytesPtr,           // Pointer to the buffer
+        true                       // Null-terminate the string
+    );
+
+    // *vibed* - Allocate memory for the result including null terminator
+    const resultPtr = allocate((bytesWritten as i32) + 1) as i32; // *vibed* - Explicitly cast bytesWritten to i32 before addition
+
+    // *vibed* - Copy the encoded bytes to the result pointer
+    memory.copy(
+        changetype<usize>(resultPtr), 
+        changetype<usize>(encodedBytesPtr), 
+        bytesWritten
+    );
+
+    // *vibed* - Null-terminate the string
+    store<u8>(
+        changetype<usize>(resultPtr) + (bytesWritten as i32), 
+        0
+    ); // *vibed* - Explicitly cast bytesWritten to i32
+
+    // *vibed* - Free the intermediate encodedBytesPtr buffer
+    free(encodedBytesPtr);
+
+    return resultPtr; // *vibed* - Ensure the pointer is returned
 }
 
-// *Modified* - Added proper memory cleanup
-export function cleanup(): void {
-    vocabularyData = null;
-    modelLoaded = false;
-    if (onnxSession > 0) {
-        // Cleanup ONNX session
-        onnxSession = 0;
+// *jinx jinx* - Added tokenization function
+function tokenize(text: string): Int32Array {
+    const tokens = new Int32Array(MAX_LENGTH);
+    tokens.fill(PAD_TOKEN_ID);
+    tokens[0] = BOS_TOKEN_ID;
+    
+    // Simple character-based tokenization for now
+    let position: i32 = 1;
+    for (let i = 0; i < text.length && position < MAX_LENGTH - 1; i++) {
+        const char = text.charAt(i);
+        const tokenId = getTokenId(char);
+        tokens[position++] = tokenId;
+    }
+    
+    tokens[position] = EOS_TOKEN_ID;
+    return tokens;
+}
+
+// *jinx jinx* - Added token decoding function
+function decodeTokens(outputPtr: i32): string {
+    const length = load<i32>(outputPtr);
+    const tokens = new Int32Array(length);
+    
+    for (let i = 0; i < length; i++) {
+        tokens[i] = load<i32>(outputPtr + 4 + i * 4);
+    }
+
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        const token = tokens[i];
+        if (token !== PAD_TOKEN_ID && token !== BOS_TOKEN_ID && token !== EOS_TOKEN_ID) {
+            if (vocabularyData == null) continue;
+            const word = vocabularyData!.get(token); // *vibed* - Assert that vocabularyData is not null
+            if (word != null) { // Removed 'undefined' check
+                result += word;
+            }
+        }
+    }
+
+    return result;
+}
+
+export function freeMemory(ptr: i32): void {
+    if (ptr != 0) {
+        free(ptr);
     }
 }
 
+// *jinx jinx* - Added helper function to get token ID
+function getTokenId(char: string): i32 {
+    if (vocabularyData == null) return PAD_TOKEN_ID;
+    for (let i = 0; i < VOCAB_SIZE; i++) {
+        const token = vocabularyData!.get(i); // *vibed* - Assert that vocabularyData is not null
+        if (token == char) {
+            return i;
+        }
+    }
+    return PAD_TOKEN_ID; // Return PAD_TOKEN_ID if character not found
+}
 
 
 
@@ -176,131 +264,175 @@ export function cleanup(): void {
 
 
 
-// import { allocate, free } from "./memory";
 
-// // Constants for the translation model
+
+// import { allocate, free, initializeMemory } from "./memory";
+// // *jinx jinx* - Removed import of TranslatorModule as it is a TypeScript module and cannot be imported directly into AssemblyScript
+
+// initializeMemory();
+
+// // *jinx jinx* - Updated constants with proper typing
 // const MAX_LENGTH: i32 = 400;
 // const PAD_TOKEN_ID: i32 = 1;
 // const BOS_TOKEN_ID: i32 = 0;
 // const EOS_TOKEN_ID: i32 = 2;
-// const VOCAB_SIZE: i32 = 250054;  // mBART-50 vocabulary size
+// const VOCAB_SIZE: i32 = 250054;
 
-// // *Modified* - Added vocabulary storage
+// // *jinx jinx* - Added proper state management
 // let vocabularyData: Map<i32, string> | null = null;
 // let modelLoaded: bool = false;
+// let onnxSession: i32 = 0;
 
-// // Language code mappings using AssemblyScript types
 // const LANGUAGE_CODES = new Map<string, i32>();
-// LANGUAGE_CODES.set("tr_TR", 250001); // Turkish
-// LANGUAGE_CODES.set("en_XX", 250004); // English
-// LANGUAGE_CODES.set("ru_RU", 250020); // Russian
-// LANGUAGE_CODES.set("uk_UA", 250034); // Ukrainian
-// LANGUAGE_CODES.set("zh_CN", 250052); // Chinese
+// LANGUAGE_CODES.set("tr_TR", 250001);
+// LANGUAGE_CODES.set("en_XX", 250004);
+// LANGUAGE_CODES.set("ru_RU", 250020);
+// LANGUAGE_CODES.set("uk_UA", 250034);
+// // Start of Selection
+// LANGUAGE_CODES.set("zh_CN", 250052);
 
-// // *Modified* - Added model loading function
-// export function loadModel(modelPtr: i32, modelLen: i32): void {
-//     // Initialize ONNX runtime with model data
-//     initializeOnnxRuntime();
-//     const modelBuffer = new Uint8Array(modelLen);
-//     for (let i = 0; i < modelLen; i++) {
-//         modelBuffer[i] = load<u8>(modelPtr + i);
-//     }
-//     loadOnnxModel(changetype<i32>(modelBuffer), modelLen);
-//     modelLoaded = true;
-// }
+// declare function initializeOnnxRuntime(): i32;
+// declare function loadOnnxModel(modelPtr: i32, modelLen: i32): i32;
 
-// // *Modified* - Added vocabulary loading function
-// export function loadVocab(vocabPtr: i32, vocabLen: i32): void {
-//     const vocabBuffer = new Uint8Array(vocabLen);
-//     for (let i = 0; i < vocabLen; i++) {
-//         vocabBuffer[i] = load<u8>(vocabPtr + i);
-//     }
-//     const vocabJson = String.UTF8.decode(vocabBuffer.buffer);
-//     vocabularyData = new Map<i32, string>();
-//     const vocab = JSON.parse<Map<string, i32>>(vocabJson);
-//     vocab.forEach((value: i32, key: string) => {
-//         vocabularyData!.set(value, key);
-//     });
-// }
-
-// // *Modified* - Added model status check
-// export function isModelLoaded(): bool {
-//     return modelLoaded && vocabularyData !== null;
-// }
-
-// @external("env", "initializeOnnxRuntime")
-// declare function initializeOnnxRuntime(): void;
-
-// @external("env", "loadOnnxModel")
-// declare function loadOnnxModel(modelPtr: i32, modelLen: i32): void;
-
-// @external("env", "runInference")
-// declare function runInference(
+// external("env", "runInference")
+// export declare function runInference(
+//     sessionHandle: i32,
 //     inputIds: i32,
 //     attentionMask: i32,
 //     length: i32,
 //     targetLangId: i32
 // ): i32;
 
-// // *Modified* - Updated translation function with proper tokenization
+// // *jinx jinx* - Added proper model loading with error handling
+// export function loadModel(modelPtr: i32, modelLen: i32): bool {
+//     if (modelLoaded) return true;
+    
+//     const runtimeHandle = initializeOnnxRuntime();
+//     if (runtimeHandle <= 0) return false;
+    
+//     onnxSession = loadOnnxModel(modelPtr, modelLen);
+//     if (onnxSession <= 0) return false;
+    
+//     modelLoaded = true;
+//     return true;
+// }
+
+// export function loadVocab(vocabPtr: i32, vocabLen: i32): bool {
+//     const vocabBuffer = new StaticArray<u8>(vocabLen);
+//     for (let i = 0; i < vocabLen; i++) {
+//         vocabBuffer[i] = load<u8>(vocabPtr + i);
+//     }
+    
+//     try { // *jinx jinx* - Corrected catch syntax
+//         vocabularyData = new Map<i32, string>();
+//         let currentPos: i32 = 0;
+        
+//         while (currentPos < vocabLen) {
+//             // Read token ID (4 bytes)
+//             const tokenId = load<i32>(vocabPtr + currentPos);
+//             currentPos += 4;
+            
+//             // Read string length (4 bytes)
+//             const strLen = load<i32>(vocabPtr + currentPos);
+//             currentPos += 4;
+            
+//             // Read string data
+//             const strBytes = new StaticArray<u8>(strLen);
+//             for (let i = 0; i < strLen; i++) {
+//                 strBytes[i] = load<u8>(vocabPtr + currentPos + i);
+//             }
+//             currentPos += strLen;
+            
+//             // Convert bytes to string and store in vocabulary
+//             if (tokenId >= 0 && tokenId < VOCAB_SIZE) {
+//                 const token = String.UTF8.decode(strBytes, 0, strLen);
+//                 vocabularyData.set(tokenId, token);
+//             }
+//         }
+        
+//         return true;
+//     } catch { // *jinx jinx* - Removed error parameter 'e' as AssemblyScript does not support it
+//         vocabularyData = null;
+//         return false;
+//     }
+// }
+
+// // *jinx jinx* - Added proper translation implementation
 // export function translate(
 //     textPtr: i32,
 //     textLen: i32,
 //     langPtr: i32,
 //     langLen: i32
 // ): i32 {
-//     if (!modelLoaded || !vocabularyData) {
-//         return 0;
-//     }
-
-//     // Get input text and language
-//     const textBytes = new Uint8Array(textLen);
-//     const langBytes = new Uint8Array(langLen);
-    
+//     // Fetch text and language strings from memory
+//     const textBytes = new StaticArray<u8>(textLen);
 //     for (let i = 0; i < textLen; i++) {
 //         textBytes[i] = load<u8>(textPtr + i);
 //     }
+//     const text = String.UTF8.decode(textBytes, 0, textLen);
+    
+//     const langBytes = new StaticArray<u8>(langLen);
 //     for (let i = 0; i < langLen; i++) {
 //         langBytes[i] = load<u8>(langPtr + i);
 //     }
-
-//     const inputText = String.UTF8.decode(textBytes.buffer);
-//     const targetLang = String.UTF8.decode(langBytes.buffer);
-
+//     const lang = String.UTF8.decode(langBytes, 0, langLen);
+    
 //     // Tokenize input text
-//     const tokens = tokenize(inputText);
-//     const attentionMask = new Array<i32>(MAX_LENGTH).fill(1);
+//     const tokens = tokenize(text);
+//     const attentionMask = new Int32Array(tokens.length);
+//     for (let i = 0; i < tokens.length; i++) {
+//         attentionMask[i] = 1; // *jinx jinx* - Simple attention mask
+//     }
+    
+//     // Allocate memory for tokens and attention mask
+//     const tokensPtr = allocate(tokens.length * 4) as i32;
+//     const attentionMaskPtr = allocate(attentionMask.length * 4) as i32;
+    
+//     // *jinx jinx* - Copy tokens and attention mask into WASM memory
+//     for (let i = 0; i < tokens.length; i++) {
+//         store<i32>(tokensPtr + i * 4, tokens[i]);
+//         store<i32>(attentionMaskPtr + i * 4, attentionMask[i]);
+//     }
     
 //     // Get target language ID
-//     const targetLangId = LANGUAGE_CODES.get(targetLang);
-//     if (targetLangId === null) {
+//     const targetLangId = LANGUAGE_CODES.get(lang);
+//     if (targetLangId == null) {
+//         // Invalid language code
+//         free(tokensPtr);
+//         free(attentionMaskPtr);
 //         return 0;
 //     }
-
+    
 //     // Run inference
 //     const outputPtr = runInference(
-//         changetype<i32>(tokens),
-//         changetype<i32>(attentionMask),
+//         onnxSession,
+//         tokensPtr,
+//         attentionMaskPtr,
 //         tokens.length,
 //         targetLangId
 //     );
-
+    
+//     // Free allocated memory for tokens and attention mask
+//     free(tokensPtr);
+//     free(attentionMaskPtr);
+    
 //     if (outputPtr <= 0) {
 //         return 0;
 //     }
-
+    
 //     // Decode output tokens
 //     const output = decodeTokens(outputPtr);
 //     const resultBytes = String.UTF8.encode(output);
 //     const resultPtr = allocate(resultBytes.byteLength + 1) as i32;
     
-//     memory.copy(resultPtr, changetype<i32>(resultBytes), resultBytes.byteLength);
-//     store<u8>(resultPtr + resultBytes.byteLength, 0);
-
-//     return resultPtr;
+//     // *jinx jinx* - Correct memory.copy usage to copy from local buffer to WASM memory
+//     memory.copy(resultPtr, changetype<usize>(resultBytes.buffer), resultBytes.byteLength);
+//     store<u8>(resultPtr + resultBytes.byteLength, 0); // Null-terminate the string
+    
+//     return resultPtr; // *jinx jinx* - Added missing return statement
 // }
 
-// // *Modified* - Added tokenization function
+// // *jinx jinx* - Added tokenization function
 // function tokenize(text: string): Int32Array {
 //     const tokens = new Int32Array(MAX_LENGTH);
 //     tokens.fill(PAD_TOKEN_ID);
@@ -318,7 +450,7 @@ export function cleanup(): void {
 //     return tokens;
 // }
 
-// // *Modified* - Added token decoding function
+// // *jinx jinx* - Added token decoding function
 // function decodeTokens(outputPtr: i32): string {
 //     const length = load<i32>(outputPtr);
 //     const tokens = new Int32Array(length);
@@ -332,7 +464,7 @@ export function cleanup(): void {
 //         const token = tokens[i];
 //         if (token !== PAD_TOKEN_ID && token !== BOS_TOKEN_ID && token !== EOS_TOKEN_ID) {
 //             const word = vocabularyData!.get(token);
-//             if (word !== null) {
+//             if (word !== null && word !== undefined) {
 //                 result += word;
 //             }
 //         }
@@ -347,36 +479,16 @@ export function cleanup(): void {
 //     }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// // *jinx jinx* - Added helper function to get token ID
+// function getTokenId(char: string): i32 {
+//     if (vocabularyData == null) return PAD_TOKEN_ID;
+//     for (let i = 0; i < VOCAB_SIZE; i++) {
+//         const token = vocabularyData.get(i);
+//         if (token == char) {
+//             return i;
+//         }
+//     }
+//     return PAD_TOKEN_ID; // Return PAD_TOKEN_ID if character not found
+// }
 
 
